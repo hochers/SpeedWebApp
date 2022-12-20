@@ -663,18 +663,18 @@ def loaddata(selected1, selected2, ath1value, ath2value, ath1value2, ath2value2)
     cid = dash.callback_context.triggered_id
     global data, metadata
     if not cid:
-        return '', '', '', '', [], [], [], [], True, [], [], [], [], True, dash.no_update, dash.no_update
+        return '', '', '', '', [], [], [], [], True, [], [], [], [], True, dash.no_update
 
     if cid == 'dropdown_load1':
         if not selected1:
-            return '', '', '', '', [], [], [], [], True, [], [], [], [], True, dash.no_update, dash.no_update
+            return '', '', '', '', [], [], [], [], True, [], [], [], [], True, dash.no_update
         _metadata, xls, frames = dropbox_download_files(selected1)
         if ath1value and ath2value:
             del metadata[ath1value]; del metadata[ath2value]
             del data[ath1value]; del data[ath2value]
     else:
         if not selected2:
-            return '', '', '', '', [], [], [], [], True, [], [], [], [], True, dash.no_update, dash.no_update
+            return '', '', '', '', [], [], [], [], True, [], [], [], [], True, dash.no_update
         _metadata, xls, frames = dropbox_download_files(selected2)
         if ath1value2 and ath2value2:
             del metadata[ath1value2]; del metadata[ath2value2]
