@@ -322,7 +322,8 @@ plot2 = dbc.Card(
     [
         html.Div(
             [
-                dcc.Graph(id='Graph2', figure=go.Figure()),
+                html.Img(id='Image2', src=testimg, height='300px', style=styleimgN),
+                dcc.Graph(id='Graph2', figure=go.Figure(), style={'display': 'block'}),
             ]
         ),
         html.Div(
@@ -555,6 +556,8 @@ def graph1plot(athvalue, angvalue, cogvalue, jvelvalue, imgvalue, slidervalue, c
               Output('Slider2', 'disabled'),
               Output('Slider2', 'max'),
               Output('Slider2', 'value'),
+              Output('Graph2', 'style'),
+              Output('Image2', 'style'),
               Input('dropdown_ath2', 'value'),
               Input('dropdown_angle2', 'value'),
               Input('dropdown_COG2', 'value'),
@@ -575,7 +578,7 @@ def graph2plot(athvalue, angvalue, cogvalue, jvelvalue, slidervalue, clickdata, 
             px, py, vel = calcroute(athvalue)
         else:
             fig.data = []
-            return fig, rf1, '', '', '', True, 0, 0
+            return fig, rf1, '', '', '', True, 0, 0, dash.no_update, dash.no_update
     if trigger == 'dropdown_angle2':
         ht = '%{y:.2f}°<extra></extra>'
         return plotData(athvalue, angvalue, trigger, ht)
@@ -593,7 +596,7 @@ def graph2plot(athvalue, angvalue, cogvalue, jvelvalue, slidervalue, clickdata, 
     elif trigger == 'Slider2' or trigger == 'Graph2' or trigger == 'routemap2':
         fig = go.Figure(data=fig['data'], layout=fig['layout'])
         if not len(fig.data):
-            return [dash.no_update for i in range(8)]
+            return [dash.no_update for i in range(10)]
         if len(fig.data) > 1:
             temp = [d for d in fig.data if d.name != 'SliderBar']
             remitem = [d for d in fig.data if d.name == 'SliderBar'][0]
@@ -623,7 +626,7 @@ def graph2plot(athvalue, angvalue, cogvalue, jvelvalue, slidervalue, clickdata, 
         rfig.data = temp
         rfig = drawSkeleton(rfig, slidervalue, athvalue, px, py)
         fig.update_layout(showlegend=False)
-        return fig, rfig, dash.no_update, dash.no_update, dash.no_update, False, int(len(y)) - 1, slidervalue
+        return fig, rfig, dash.no_update, dash.no_update, dash.no_update, False, int(len(y)) - 1, slidervalue, dash.no_update, dash.no_update
     else:
         fig = go.Figure(data=fig['data'], layout=defl)
         rfig = go.Figure(data=[], layout=routefig['layout'])
@@ -636,7 +639,7 @@ def graph2plot(athvalue, angvalue, cogvalue, jvelvalue, slidervalue, clickdata, 
             rfig.update_layout(showlegend=False)
         except NameError:
             pass
-        return fig, rfig, dash.no_update, dash.no_update, dash.no_update, True, 0, 0
+        return fig, rfig, dash.no_update, dash.no_update, dash.no_update, True, 0, 0, dash.no_update, dash.no_update
 
 @app.callback(Output('input_ath1', 'value'),
               Output('input_ath2', 'value'),
