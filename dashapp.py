@@ -19,7 +19,7 @@ import cv2
 
 #my_css = ['https://cdn.jsdelivr.net/npm/bootswatch@4.5.2/dist/cyborg/bootstrap.min.css']
 app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
-#server = app.server
+server = app.server
 
 DROPBOX_REFRESH_TOKEN = 'zXS2ed9DnA8AAAAAAAAAAUnaiyzwI7w4G30_VWxASZO07T2ScBgLNZZLQM3jWrE0'
 
