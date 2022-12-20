@@ -31,6 +31,7 @@ dbx = dropbox.Dropbox(
 #folders = dropbox_listfolders()
 
 testimg = Image.open("Muh.png")
+routeimg = Image.open("RouteWall_Points2.png")
 
 data = {}
 metadata = {}
@@ -70,7 +71,7 @@ rf1.update_layout(
 
 rf1.add_layout_image(
     dict(
-        source='assets/RouteWall_Points2.png',
+        source=routeimg,
         xref="x",
         yref="y",
         x=0,
@@ -838,7 +839,7 @@ def dropbox_download_files(folder):
     _, result = dbx.files_download(path='/Test/'+folder+'/'+xlsfile)
     xls = pd.ExcelFile(result.content)
     #_, response = dbx.files_download(path='/Test/'+folder+'/'+imgfile)
-    dbx.files_download_to_file(download_path='assets/output.avi', path='/Test/'+folder+'/'+imgfile)
+    dbx.files_download_to_file(download_path='output.avi', path='/Test/' + folder + '/' + imgfile)
     frames = readFrames(metafile=metafile)
 
     return metafile, xls, frames
@@ -884,7 +885,7 @@ def unpackmeta(meta, side):
     return cont
 
 def readFrames(metafile, response=None):
-    FILE_OUTPUT = 'assets/output.avi'
+    FILE_OUTPUT = 'output.avi'
     if response is not None:
         if os.path.isfile(FILE_OUTPUT):
             os.remove(FILE_OUTPUT)
