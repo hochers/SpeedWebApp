@@ -21,6 +21,8 @@ import cv2
 app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
 server = app.server
 
+bgcolor = 'white'
+
 DROPBOX_REFRESH_TOKEN = 'zXS2ed9DnA8AAAAAAAAAAUnaiyzwI7w4G30_VWxASZO07T2ScBgLNZZLQM3jWrE0'
 
 dbx = dropbox.Dropbox(
@@ -37,7 +39,8 @@ data = {}
 metadata = {}
 
 margin_dd = '20px'
-defl = {'margin':{'l': 10, 'r': 25, 't': 40, 'b': 40}, 'height': 330, 'clickmode':'event'}    # Default layout for graph figures
+defl = {'margin':{'l': 10, 'r': 25, 't': 40, 'b': 40}, 'height': 330, 'clickmode':'event',
+        'paper_bgcolor':bgcolor}    # Default layout for graph figures
 styleimgN = {'margin':'20px','vertical-align':'center','display':'none',
                                 'margin-left':'auto', 'margin-right':'auto'}    # Default layout for image figure no display
 styleimgB = {'margin':'20px','vertical-align':'center','display':'block',
@@ -63,7 +66,7 @@ rf1.update_layout(
     margin=dict(l=0, r=0, t=0,b=0),
     xaxis=dict(showgrid=False, zeroline=False, showticklabels=False, fixedrange=True),
     yaxis=dict(showgrid=False, zeroline=False, showticklabels=False, fixedrange=True),
-    plot_bgcolor="white",
+    plot_bgcolor=bgcolor,
     clickmode='event',
     xaxis_range=[0,2.9],
     yaxis_range=[-10,10]
@@ -107,7 +110,7 @@ load1 = dbc.Card(
                 dbc.Col(
                     dcc.Dropdown(
                         id='dropdown_load1',
-                        style={'color': 'black', 'text-align': 'center', 'margin':'1px'},
+                        style={'color': 'black', 'text-align': 'center', 'margin-top':'5px', 'margin-left': '2px'},
                         placeholder='Please select...',
                     ), md=4
                 ),
@@ -124,19 +127,19 @@ load1 = dbc.Card(
                                type='text',
                                placeholder='Athlete 1',
                                readOnly=True,
-                               style={'textAlign':'center', 'margin':'4px'}), md=2
+                               style={'textAlign':'center', 'margin':'8px'}), md=2
                 ),
                 dbc.Col(
                         dcc.Input(id='input_ath2',
                                type='text',
                                placeholder='Athlete 2',
                                readOnly=True,
-                               style={'textAlign':'center', 'margin':'4px'}), md=2
+                               style={'textAlign':'center', 'margin':'8px'}), md=2
                 )
             ]
         )
     ],
-    style={"height": "4vh"}
+    style={"height": "5vh"}
 )
 
 load2 = dbc.Card(
@@ -146,7 +149,7 @@ load2 = dbc.Card(
                 dbc.Col(
                     dcc.Dropdown(
                                  id='dropdown_load2',
-                                 style={'color': 'black', 'text-align': 'center', 'margin':'1px'},
+                                 style={'color': 'black', 'text-align': 'center', 'margin-top':'5px', 'margin-left': '2px'},
                                  placeholder='Please select...',
                                  ), md=4
                 ),
@@ -164,19 +167,19 @@ load2 = dbc.Card(
                                type='text',
                                placeholder='Athlete 1',
                                readOnly=True,
-                               style={'textAlign':'center', 'margin':'4px'}), md=2
+                               style={'textAlign':'center', 'margin':'8px'}), md=2
                 ),
                 dbc.Col(
                         dcc.Input(id='input_ath2_2',
                                type='text',
                                placeholder='Athlete 2',
                                readOnly=True,
-                               style={'textAlign':'center', 'margin':'4px'}), md=2
+                               style={'textAlign':'center', 'margin':'8px'}), md=2
                 )
             ]
         )
     ],
-    style={"height": "4vh"}
+    style={"height": "5vh"}
 )
 
 controls1 = dbc.Card(
@@ -189,7 +192,7 @@ controls1 = dbc.Card(
                     placeholder='Athlete',
                     disabled=True,
                 ),
-            ]
+            ],
         ),
         html.Div(
             [
@@ -342,7 +345,7 @@ route = dbc.Card(
         [
             dbc.Col(
                 dcc.Graph(id='routemap1',figure=rf1,
-                          style=dict(margin='3px',height='89vh'),
+                          style=dict(margin='3px',height='91vh'),
                           config=dict(displayModeBar=False)),md=6
             ),
             # dbc.Col(
@@ -350,13 +353,13 @@ route = dbc.Card(
             # ),
             dbc.Col(
                 dcc.Graph(id='routemap2', figure=rf1,
-                          style=dict(margin='3px', height='89vh'),
+                          style=dict(margin='3px', height='91vh'),
                           config=dict(displayModeBar=False)), md=6
             )
         ], align='center'
     )
     ],
-    style={"height": "90vh"}
+    style={"height": "92vh"}
 )
 
 app.layout = dbc.Container(
@@ -365,8 +368,8 @@ app.layout = dbc.Container(
         dcc.Store(id='Metadata'),
         #html.Div(dcc.Dropdown(id='hidden', style={'display': 'none'})),
         dbc.Row([
-            dbc.Col(html.H1("Speed Climbing Data Visualizer", style={"height": "5vh"}),md=11),
-            dbc.Col(dcc.Loading(id='loading1', type='default', children=html.Div(id='loading-output1'), style={'margin-top':'70px'}),md=1)
+            dbc.Col(html.H1("Speed Climbing Data Visualizer", style={"height": "3vh"}),md=11),
+            dbc.Col(dcc.Loading(id='loading1', type='default', children=html.Div(id='loading-output1'), style={'margin-top':'55px'}),md=1)
         ]),
         html.Hr(),
         dbc.Row(
@@ -452,26 +455,15 @@ def dropdownath2(value):
     else:
         return True, True, True
 
-@app.callback(Output('Graph1', 'figure'),
-              Output('routemap1', 'figure'),
-              Output('dropdown_angle1', 'value'),
-              Output('dropdown_COG1', 'value'),
-              Output('dropdown_JVEL1', 'value'),
-              Output('Slider1', 'disabled'),
-              Output('Slider1', 'max'),
-              Output('Slider1', 'value'),
-              Output('Graph1', 'style'),
-              Output('Image1', 'style'),
-              Input('dropdown_ath1', 'value'),
-              Input('dropdown_angle1', 'value'),
-              Input('dropdown_COG1', 'value'),
-              Input('dropdown_JVEL1', 'value'),
-              Input('dropdown_IMG1','value'),
-              Input('Slider1', 'value'),
-              Input('Graph1', 'clickData'),
-              Input('Graph1', 'figure'),
-              Input('routemap1', 'figure'),
-              Input('routemap1', 'clickData'))
+plotdataArgsO1 = [Output('Graph1', 'figure'), Output('routemap1', 'figure'), Output('dropdown_angle1', 'value'),
+              Output('dropdown_COG1', 'value'), Output('dropdown_JVEL1', 'value'), Output('Slider1', 'disabled'),
+              Output('Slider1', 'max'), Output('Slider1', 'value'), Output('Graph1', 'style'), Output('Image1', 'style')]
+
+plotdataArgsI1 = [Input('dropdown_ath1', 'value'), Input('dropdown_angle1', 'value'), Input('dropdown_COG1', 'value'),
+              Input('dropdown_JVEL1', 'value'), Input('dropdown_IMG1','value'), Input('Slider1', 'value'),
+              Input('Graph1', 'clickData'), Input('Graph1', 'figure'), Input('routemap1', 'figure'), Input('routemap1', 'clickData')]
+
+@app.callback(plotdataArgsO1,plotdataArgsI1)
 def graph1plot(athvalue, angvalue, cogvalue, jvelvalue, imgvalue, slidervalue, clickdata, fig, routefig, clickData):
     ctx = dash.callback_context
     if not ctx.triggered:
@@ -548,26 +540,16 @@ def graph1plot(athvalue, angvalue, cogvalue, jvelvalue, imgvalue, slidervalue, c
             pass
         return fig, rfig, dash.no_update, dash.no_update, dash.no_update, True, 0, 0, dash.no_update, dash.no_update
 
-@app.callback(Output('Graph2', 'figure'),
-              Output('routemap2', 'figure'),
-              Output('dropdown_angle2', 'value'),
-              Output('dropdown_COG2', 'value'),
-              Output('dropdown_JVEL2', 'value'),
-              Output('Slider2', 'disabled'),
-              Output('Slider2', 'max'),
-              Output('Slider2', 'value'),
-              Output('Graph2', 'style'),
-              Output('Image2', 'style'),
-              Input('dropdown_ath2', 'value'),
-              Input('dropdown_angle2', 'value'),
-              Input('dropdown_COG2', 'value'),
-              Input('dropdown_JVEL2', 'value'),
-              Input('Slider2', 'value'),
-              Input('Graph2', 'clickData'),
-              Input('Graph2', 'figure'),
-              Input('routemap2', 'figure'),
-              Input('routemap2', 'clickData'))
-def graph2plot(athvalue, angvalue, cogvalue, jvelvalue, slidervalue, clickdata, fig, routefig, clickData):
+plotdataArgsO2 = [Output('Graph2', 'figure'), Output('routemap2', 'figure'), Output('dropdown_angle2', 'value'),
+              Output('dropdown_COG2', 'value'), Output('dropdown_JVEL2', 'value'), Output('Slider2', 'disabled'),
+              Output('Slider2', 'max'), Output('Slider2', 'value'), Output('Graph2', 'style'), Output('Image2', 'style')]
+
+plotdataArgsI2 = [Input('dropdown_ath2', 'value'), Input('dropdown_angle2', 'value'), Input('dropdown_COG2', 'value'),
+              Input('dropdown_JVEL2', 'value'), Input('dropdown_IMG2','value'), Input('Slider2', 'value'),
+              Input('Graph2', 'clickData'), Input('Graph2', 'figure'), Input('routemap2', 'figure'), Input('routemap2', 'clickData')]
+
+@app.callback(plotdataArgsO2, plotdataArgsI2)
+def graph2plot(athvalue, angvalue, cogvalue, jvelvalue, imgvalue, slidervalue, clickdata, fig, routefig, clickData):
     ctx = dash.callback_context
     if not ctx.triggered:
         trigger = ''
@@ -593,6 +575,8 @@ def graph2plot(athvalue, angvalue, cogvalue, jvelvalue, slidervalue, clickdata, 
     elif trigger == 'dropdown_JVEL2':
         ht = '%{y:.2f} m/s<extra></extra>'
         return plotData(athvalue, jvelvalue, trigger, ht)
+    elif trigger == 'dropdown_IMG2':
+        return dash.no_update, dash.no_update, '', '', '', dash.no_update, dash.no_update, dash.no_update, {'display':'none'}, styleimgB
     elif trigger == 'Slider2' or trigger == 'Graph2' or trigger == 'routemap2':
         fig = go.Figure(data=fig['data'], layout=fig['layout'])
         if not len(fig.data):
