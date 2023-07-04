@@ -37,6 +37,7 @@ routeimg = Image.open("RouteWall_Points2.png")
 
 data = {}
 metadata = {}
+frames = {}
 
 margin_dd = '20px'
 defl = {'margin':{'l': 10, 'r': 25, 't': 40, 'b': 40}, 'height': 330, 'clickmode':'event',
@@ -233,8 +234,8 @@ controls1 = dbc.Card(
                     id='dropdown_IMG1',
                     style={'color': 'black', 'text-align':'center','margin-bottom': margin_dd},
                     placeholder='Images',
-                    disabled=False,
-                    options=['testimg']
+                    disabled=True,
+                    options=['Solo']
                 ),
             ]
         ),
@@ -294,7 +295,8 @@ controls2 = dbc.Card(
                     id='dropdown_IMG2',
                     style={'color': 'black', 'text-align':'center','margin-bottom': margin_dd},
                     placeholder='Images',
-                    disabled=False,
+                    disabled=True,
+                    options=['Solo']
                 ),
             ]
         ),
@@ -438,30 +440,34 @@ def toggle_animation(dpl1, dpl2):
 @app.callback(Output('dropdown_angle1', 'disabled'),
               Output('dropdown_COG1', 'disabled'),
               Output('dropdown_JVEL1', 'disabled'),
+              Output('dropdown_IMG1', 'disabled'),
               Input('dropdown_ath1', 'value'))
 def dropdownath1(value):
     if value:
-        return False, False, False
+        return False, False, False, False
     else:
-        return True, True, True
+        return True, True, True, True
 
 @app.callback(Output('dropdown_angle2', 'disabled'),
               Output('dropdown_COG2', 'disabled'),
               Output('dropdown_JVEL2', 'disabled'),
+              Output('dropdown_IMG2', 'disabled'),
               Input('dropdown_ath2', 'value'))
 def dropdownath2(value):
     if value:
-        return False, False, False
+        return False, False, False, False
     else:
-        return True, True, True
+        return True, True, True, True
 
 plotdataArgsO1 = [Output('Graph1', 'figure'), Output('routemap1', 'figure'), Output('dropdown_angle1', 'value'),
-              Output('dropdown_COG1', 'value'), Output('dropdown_JVEL1', 'value'), Output('Slider1', 'disabled'),
-              Output('Slider1', 'max'), Output('Slider1', 'value'), Output('Graph1', 'style'), Output('Image1', 'style')]
+              Output('dropdown_COG1', 'value'), Output('dropdown_JVEL1', 'value'), Output('dropdown_IMG1', 'value'),
+              Output('Slider1', 'disabled'), Output('Slider1', 'max'), Output('Slider1', 'value'),
+              Output('Graph1', 'style'), Output('Image1', 'style'), Output('Image1', 'src')]
 
 plotdataArgsI1 = [Input('dropdown_ath1', 'value'), Input('dropdown_angle1', 'value'), Input('dropdown_COG1', 'value'),
               Input('dropdown_JVEL1', 'value'), Input('dropdown_IMG1','value'), Input('Slider1', 'value'),
-              Input('Graph1', 'clickData'), Input('Graph1', 'figure'), Input('routemap1', 'figure'), Input('routemap1', 'clickData')]
+              Input('Graph1', 'clickData'), Input('Graph1', 'figure'), Input('routemap1', 'figure'),
+              Input('routemap1', 'clickData')]
 
 @app.callback(plotdataArgsO1,plotdataArgsI1)
 def graph1plot(athvalue, angvalue, cogvalue, jvelvalue, imgvalue, slidervalue, clickdata, fig, routefig, clickData):
@@ -470,16 +476,19 @@ def graph1plot(athvalue, angvalue, cogvalue, jvelvalue, imgvalue, slidervalue, c
         trigger = ''
     else:
         trigger = ctx.triggered_id
-        if trigger != 'dropdown_IMG1':
-            fig = go.Figure(data=fig['data'], layout=fig['layout'])
-            if athvalue:
-                px, py, vel = calcroute(athvalue)
-            else:
-                fig.data = []
-                return fig, rf1, '', '', '', True, 0, 0, dash.no_update, dash.no_update
+        fig = go.Figure(data=fig['data'], layout=fig['layout'])
+        if athvalue:
+            px, py, vel = calcroute(athvalue)
+        else:
+            fig.data = []
+            return fig, rf1, '', '', '', '', True, 0, 0, {'display':'block'}, styleimgN, dash.no_update
     if trigger == 'dropdown_angle1':
         ht = '%{y:.2f}°<extra></extra>'
-        return plotData(athvalue, angvalue, trigger, ht)
+        rfig = go.Figure(data=routefig['data'], layout=routefig['layout'])
+        temp = [d for d in rfig.data if d.name in ['COGPath', 'holdspoints']]
+        rfig.data = temp
+        rfig = drawSkeleton(rfig, slidervalue, athvalue, px, py)
+        return plotData(athvalue, angvalue, slidervalue, trigger, ht, rfig)
     elif trigger == 'dropdown_COG1':
         if cogvalue == 'BC Velocity':
             ht = '%{y:.2f} m/s<extra></extra>'
@@ -487,46 +496,87 @@ def graph1plot(athvalue, angvalue, cogvalue, jvelvalue, imgvalue, slidervalue, c
             ht = '%{y:.2f} m/s^2<extra></extra>'
         else:
             ht = '%{y:.2f} m<extra></extra>'
-        return plotData(athvalue, cogvalue, trigger, ht)
+        rfig = go.Figure(data=routefig['data'], layout=routefig['layout'])
+        temp = [d for d in rfig.data if d.name in ['COGPath', 'holdspoints']]
+        rfig.data = temp
+        rfig = drawSkeleton(rfig, slidervalue, athvalue, px, py)
+        return plotData(athvalue, cogvalue, slidervalue, trigger, ht, rfig)
     elif trigger == 'dropdown_JVEL1':
         ht = '%{y:.2f} m/s<extra></extra>'
-        return plotData(athvalue, jvelvalue, trigger, ht)
+        rfig = go.Figure(data=routefig['data'], layout=routefig['layout'])
+        temp = [d for d in rfig.data if d.name in ['COGPath', 'holdspoints']]
+        rfig.data = temp
+        rfig = drawSkeleton(rfig, slidervalue, athvalue, px, py)
+        return plotData(athvalue, jvelvalue, slidervalue, trigger, ht, rfig)
     elif trigger == 'dropdown_IMG1':
-        return dash.no_update, dash.no_update, '', '', '', dash.no_update, dash.no_update, dash.no_update, {'display':'none'}, styleimgB
-    elif trigger == 'Slider1' or trigger == 'Graph1' or trigger == 'routemap1':
-        fig = go.Figure(data=fig['data'], layout=fig['layout'])
-        if not len(fig.data):
-            return [dash.no_update for i in range(10)]
-        if len(fig.data) > 1:
-            temp = [d for d in fig.data if d.name != 'SliderBar']
-            remitem = [d for d in fig.data if d.name == 'SliderBar'][0]
-            fig.data = temp
-        x, y = fig.data[0].x, fig.data[0].y
-        ylim = fig.layout.yaxis.range
-        if trigger == 'Slider1':
-            fig.add_trace(go.Scatter(x=[x[slidervalue], x[slidervalue]], y=ylim, mode='lines', hoverinfo='skip', name='SliderBar'))
-        elif trigger == 'Graph1':
-            cx = clickdata['points'][0]['x']
-            dat = np.array(x)
-            slidervalue = np.where(dat == min(dat, key=lambda var: abs(var - cx)))[0][0]
-            fig.add_trace(go.Scatter(x=[cx, cx], y=ylim, mode='lines', hoverinfo='skip', name='SliderBar'))
+        rfig = go.Figure(data=routefig['data'], layout=routefig['layout'])
+        temp = [d for d in rfig.data if d.name in ['COGPath', 'holdspoints']]
+        rfig.data = temp
+        if imgvalue is not None:
+            rfig = drawSkeleton(rfig, slidervalue, athvalue, px, py)
+            # if imgvalue == 'Comparison' and not slider2on:
+            #     img1 = frames[athvalue][slidervalue]
+            #     img1 = img1.crop((150, 0, img1.width - 150, img1.height))
+            #     img2 = frames[athvalue2][slidervalue2]
+            #     img2 = img2.crop((150, 0, img2.width - 150, img2.height))
+            #     compimg = concatIMG(img1, img2)
+            #     return dash.no_update, rfig, '', '', '', dash.no_update, False, \
+            #            int(len(frames[athvalue])) - 1, dash.no_update, {'display': 'none'}, \
+            #            styleimgB, compimg
+            # else:
+            return dash.no_update, rfig, '', '', '', 'Solo', False, \
+                       int(len(frames[athvalue])) - 1, dash.no_update, {'display': 'none'}, \
+                       styleimgB, frames[athvalue][slidervalue]
         else:
-            holdtext = clickData['points'][0]['text']
-            hind = getHoldIndex(holdtext, athvalue)
-            if hind is not None:
-                slidervalue = int(hind)
+            fig = go.Figure(data=[], layout=defl)
+            return fig, rfig, '', '', '', '', True, 0, 0, \
+                   {'display': 'block'}, styleimgN, dash.no_update
+    elif trigger == 'Slider1' or trigger == 'Graph1' or trigger == 'routemap1':
+        if imgvalue is None or imgvalue == '':
+            fig = go.Figure(data=fig['data'], layout=fig['layout'])
+            if not len(fig.data):
+                return [dash.no_update for i in range(12)]
+            if len(fig.data) > 1:
+                temp = [d for d in fig.data if d.name != 'SliderBar']
+                remitem = [d for d in fig.data if d.name == 'SliderBar'][0]
+                fig.data = temp
+            x, y = fig.data[0].x, fig.data[0].y
+            ylim = fig.layout.yaxis.range
+            if trigger == 'Slider1':
                 fig.add_trace(go.Scatter(x=[x[slidervalue], x[slidervalue]], y=ylim, mode='lines', hoverinfo='skip', name='SliderBar'))
+            elif trigger == 'Graph1':
+                cx = clickdata['points'][0]['x']
+                dat = np.array(x)
+                slidervalue = np.where(dat == min(dat, key=lambda var: abs(var - cx)))[0][0]
+                fig.add_trace(go.Scatter(x=[cx, cx], y=ylim, mode='lines', hoverinfo='skip', name='SliderBar'))
             else:
-                try:
-                    fig.add_trace(remitem)
-                except UnboundLocalError:
-                    pass
+                holdtext = clickData['points'][0]['text']
+                hind = getHoldIndex(holdtext, athvalue)
+                if hind is not None:
+                    slidervalue = int(hind)
+                    fig.add_trace(go.Scatter(x=[x[slidervalue], x[slidervalue]], y=ylim, mode='lines', hoverinfo='skip', name='SliderBar'))
+                else:
+                    try:
+                        fig.add_trace(remitem)
+                    except UnboundLocalError:
+                        pass
+        else:
+            if trigger == 'routemap1':
+                holdtext = clickData['points'][0]['text']
+                hind = getHoldIndex(holdtext, athvalue)
+                if hind is not None:
+                    slidervalue = int(hind)
         rfig = go.Figure(data=routefig['data'], layout=routefig['layout'])
         temp = [d for d in rfig.data if d.name in ['COGPath', 'holdspoints']]
         rfig.data = temp
         rfig = drawSkeleton(rfig, slidervalue, athvalue, px, py)
         fig.update_layout(showlegend=False)
-        return fig, rfig, dash.no_update, dash.no_update, dash.no_update, False, int(len(y)) - 1, slidervalue, dash.no_update, dash.no_update
+        try:
+            return fig, rfig, dash.no_update, dash.no_update, dash.no_update, dash.no_update, False,\
+                   int(len(y)) - 1, slidervalue, dash.no_update, dash.no_update, frames[athvalue][slidervalue]
+        except UnboundLocalError:
+            return fig, rfig, dash.no_update, dash.no_update, dash.no_update, dash.no_update, False, \
+                   int(len(frames[athvalue])) - 1, slidervalue, dash.no_update, dash.no_update, frames[athvalue][slidervalue]
     else:
         fig = go.Figure(data=fig['data'], layout=defl)
         rfig = go.Figure(data=[], layout=routefig['layout'])
@@ -538,11 +588,13 @@ def graph1plot(athvalue, angvalue, cogvalue, jvelvalue, imgvalue, slidervalue, c
             rfig.update_layout(showlegend=False)
         except NameError:
             pass
-        return fig, rfig, dash.no_update, dash.no_update, dash.no_update, True, 0, 0, dash.no_update, dash.no_update
+        return fig, rfig, '', '', '', '', True,\
+               0, 0, dash.no_update, dash.no_update, dash.no_update
 
 plotdataArgsO2 = [Output('Graph2', 'figure'), Output('routemap2', 'figure'), Output('dropdown_angle2', 'value'),
-              Output('dropdown_COG2', 'value'), Output('dropdown_JVEL2', 'value'), Output('Slider2', 'disabled'),
-              Output('Slider2', 'max'), Output('Slider2', 'value'), Output('Graph2', 'style'), Output('Image2', 'style')]
+              Output('dropdown_COG2', 'value'), Output('dropdown_JVEL2', 'value'), Output('dropdown_IMG2', 'value'),
+              Output('Slider2', 'disabled'), Output('Slider2', 'max'), Output('Slider2', 'value'),
+              Output('Graph2', 'style'), Output('Image2', 'style'), Output('Image2', 'src')]
 
 plotdataArgsI2 = [Input('dropdown_ath2', 'value'), Input('dropdown_angle2', 'value'), Input('dropdown_COG2', 'value'),
               Input('dropdown_JVEL2', 'value'), Input('dropdown_IMG2','value'), Input('Slider2', 'value'),
@@ -560,10 +612,14 @@ def graph2plot(athvalue, angvalue, cogvalue, jvelvalue, imgvalue, slidervalue, c
             px, py, vel = calcroute(athvalue)
         else:
             fig.data = []
-            return fig, rf1, '', '', '', True, 0, 0, dash.no_update, dash.no_update
+            return fig, rf1, '', '', '', '', True, 0, 0, {'display': 'block'}, styleimgN, dash.no_update
     if trigger == 'dropdown_angle2':
         ht = '%{y:.2f}°<extra></extra>'
-        return plotData(athvalue, angvalue, trigger, ht)
+        rfig = go.Figure(data=routefig['data'], layout=routefig['layout'])
+        temp = [d for d in rfig.data if d.name in ['COGPath', 'holdspoints']]
+        rfig.data = temp
+        rfig = drawSkeleton(rfig, slidervalue, athvalue, px, py)
+        return plotData(athvalue, angvalue, slidervalue, trigger, ht, rfig)
     elif trigger == 'dropdown_COG2':
         if cogvalue == 'BC Velocity':
             ht = '%{y:.2f} m/s<extra></extra>'
@@ -571,98 +627,125 @@ def graph2plot(athvalue, angvalue, cogvalue, jvelvalue, imgvalue, slidervalue, c
             ht = '%{y:.2f} m/s^2<extra></extra>'
         else:
             ht = '%{y:.2f} m<extra></extra>'
-        return plotData(athvalue, cogvalue, trigger, ht)
+        rfig = go.Figure(data=routefig['data'], layout=routefig['layout'])
+        temp = [d for d in rfig.data if d.name in ['COGPath', 'holdspoints']]
+        rfig.data = temp
+        rfig = drawSkeleton(rfig, slidervalue, athvalue, px, py)
+        return plotData(athvalue, cogvalue, slidervalue, trigger, ht, rfig)
     elif trigger == 'dropdown_JVEL2':
         ht = '%{y:.2f} m/s<extra></extra>'
-        return plotData(athvalue, jvelvalue, trigger, ht)
+        rfig = go.Figure(data=routefig['data'], layout=routefig['layout'])
+        temp = [d for d in rfig.data if d.name in ['COGPath', 'holdspoints']]
+        rfig.data = temp
+        rfig = drawSkeleton(rfig, slidervalue, athvalue, px, py)
+        return plotData(athvalue, jvelvalue, slidervalue, trigger, ht, rfig)
     elif trigger == 'dropdown_IMG2':
-        return dash.no_update, dash.no_update, '', '', '', dash.no_update, dash.no_update, dash.no_update, {'display':'none'}, styleimgB
-    elif trigger == 'Slider2' or trigger == 'Graph2' or trigger == 'routemap2':
-        fig = go.Figure(data=fig['data'], layout=fig['layout'])
-        if not len(fig.data):
-            return [dash.no_update for i in range(10)]
-        if len(fig.data) > 1:
-            temp = [d for d in fig.data if d.name != 'SliderBar']
-            remitem = [d for d in fig.data if d.name == 'SliderBar'][0]
-            fig.data = temp
-        x, y = fig.data[0].x, fig.data[0].y
-        ylim = fig.layout.yaxis.range
-        if trigger == 'Slider2':
-            fig.add_trace(go.Scatter(x=[x[slidervalue], x[slidervalue]], y=ylim, mode='lines', hoverinfo='skip', name='SliderBar'))
-        elif trigger == 'Graph2':
-            cx = clickdata['points'][0]['x']
-            dat = np.array(x)
-            slidervalue = np.where(dat == min(dat, key=lambda var: abs(var - cx)))[0][0]
-            fig.add_trace(go.Scatter(x=[cx, cx], y=ylim, mode='lines', hoverinfo='skip', name='SliderBar'))
+        rfig = go.Figure(data=routefig['data'], layout=routefig['layout'])
+        temp = [d for d in rfig.data if d.name in ['COGPath', 'holdspoints']]
+        rfig.data = temp
+        if imgvalue is not None:
+            rfig = drawSkeleton(rfig, slidervalue, athvalue, px, py)
+            return dash.no_update, rfig, '', '', '', dash.no_update, False, \
+                   int(len(frames[athvalue])) - 1, dash.no_update, {'display': 'none'}, \
+                   styleimgB, frames[athvalue][slidervalue]
         else:
-            holdtext = clickData['points'][0]['text']
-            hind = getHoldIndex(holdtext, athvalue)
-            if hind is not None:
-                slidervalue = int(hind)
-                fig.add_trace(go.Scatter(x=[x[slidervalue], x[slidervalue]], y=ylim, mode='lines', hoverinfo='skip', name='SliderBar'))
+            fig = go.Figure(data=[], layout=defl)
+            return fig, rfig, '', '', '', '', True, 0, 0, \
+                   {'display': 'block'}, styleimgN, dash.no_update
+    elif trigger == 'Slider2' or trigger == 'Graph2' or trigger == 'routemap2':
+        if imgvalue is None or imgvalue == '':
+            fig = go.Figure(data=fig['data'], layout=fig['layout'])
+            if not len(fig.data):
+                return [dash.no_update for i in range(12)]
+            if len(fig.data) > 1:
+                temp = [d for d in fig.data if d.name != 'SliderBar']
+                remitem = [d for d in fig.data if d.name == 'SliderBar'][0]
+                fig.data = temp
+            x, y = fig.data[0].x, fig.data[0].y
+            ylim = fig.layout.yaxis.range
+            if trigger == 'Slider2':
+                fig.add_trace(go.Scatter(x=[x[slidervalue], x[slidervalue]], y=ylim, mode='lines', hoverinfo='skip',
+                                         name='SliderBar'))
+            elif trigger == 'Graph2':
+                cx = clickdata['points'][0]['x']
+                dat = np.array(x)
+                slidervalue = np.where(dat == min(dat, key=lambda var: abs(var - cx)))[0][0]
+                fig.add_trace(go.Scatter(x=[cx, cx], y=ylim, mode='lines', hoverinfo='skip', name='SliderBar'))
             else:
-                try:
-                    fig.add_trace(remitem)
-                except UnboundLocalError:
-                    pass
+                holdtext = clickData['points'][0]['text']
+                hind = getHoldIndex(holdtext, athvalue)
+                if hind is not None:
+                    slidervalue = int(hind)
+                    fig.add_trace(go.Scatter(x=[x[slidervalue], x[slidervalue]], y=ylim, mode='lines', hoverinfo='skip',
+                                             name='SliderBar'))
+                else:
+                    try:
+                        fig.add_trace(remitem)
+                    except UnboundLocalError:
+                        pass
+        else:
+            if trigger == 'routemap2':
+                holdtext = clickData['points'][0]['text']
+                hind = getHoldIndex(holdtext, athvalue)
+                if hind is not None:
+                    slidervalue = int(hind)
         rfig = go.Figure(data=routefig['data'], layout=routefig['layout'])
         temp = [d for d in rfig.data if d.name in ['COGPath', 'holdspoints']]
         rfig.data = temp
         rfig = drawSkeleton(rfig, slidervalue, athvalue, px, py)
         fig.update_layout(showlegend=False)
-        return fig, rfig, dash.no_update, dash.no_update, dash.no_update, False, int(len(y)) - 1, slidervalue, dash.no_update, dash.no_update
+        try:
+            return fig, rfig, dash.no_update, dash.no_update, dash.no_update, dash.no_update, False, \
+                   int(len(y)) - 1, slidervalue, dash.no_update, dash.no_update, frames[athvalue][slidervalue]
+        except UnboundLocalError:
+            return fig, rfig, dash.no_update, dash.no_update, dash.no_update, dash.no_update, False, \
+                   int(len(frames[athvalue])) - 1, slidervalue, dash.no_update, dash.no_update, frames[athvalue][
+                       slidervalue]
     else:
         fig = go.Figure(data=fig['data'], layout=defl)
         rfig = go.Figure(data=[], layout=routefig['layout'])
         try:
             rfig.add_trace(go.Scatter(x=px, y=py, mode='markers+lines', hovertemplate='%{text:.2f}<extra></extra>',
                                       text=['{}'.format(v) for v in vel],
-                                      marker=dict(size=4, color=vel, colorscale='Jet', showscale=False), line=dict(width=4), name='COGPath'))
-            rfig.add_trace(go.Scatter(x=list(holdspos[:, 0]), y=list(holdspos[:, 1]), opacity=0, mode='markers', hoverinfo='text',
+                                      marker=dict(size=4, color=vel, colorscale='Jet', showscale=False),
+                                      line=dict(width=4), name='COGPath'))
+            rfig.add_trace(
+                go.Scatter(x=list(holdspos[:, 0]), y=list(holdspos[:, 1]), opacity=0, mode='markers', hoverinfo='text',
                            text=holdstext, hoverlabel=dict(bgcolor='blue'), name='holdspoints'))
             rfig.update_layout(showlegend=False)
         except NameError:
             pass
-        return fig, rfig, dash.no_update, dash.no_update, dash.no_update, True, 0, 0, dash.no_update, dash.no_update
+        return fig, rfig, '', '', '', '', True, \
+               0, 0, dash.no_update, dash.no_update, dash.no_update
 
-@app.callback(Output('input_ath1', 'value'),
-              Output('input_ath2', 'value'),
-              Output('input_ath1_2', 'value'),
-              Output('input_ath2_2', 'value'),
-              Output('dropdown_ath1', 'options'),
-              Output('dropdown_angle1', 'options'),
-              Output('dropdown_COG1', 'options'),
-              Output('dropdown_JVEL1', 'options'),
-              Output('dropdown_ath1', 'disabled'),
-              Output('dropdown_ath2', 'options'),
-              Output('dropdown_angle2', 'options'),
-              Output('dropdown_COG2', 'options'),
-              Output('dropdown_JVEL2', 'options'),
-              Output('dropdown_ath2', 'disabled'),
-              Output('loading-output1', 'children'),
-              Input('dropdown_load1', 'value'),
-              Input('dropdown_load2', 'value'),
-              State('input_ath1', 'value'),
-              State('input_ath2', 'value'),
-              State('input_ath1_2', 'value'),
-              State('input_ath2_2', 'value'), prevent_initial_call=True)
+loadArgsO = [Output('input_ath1', 'value'), Output('input_ath2', 'value'), Output('input_ath1_2', 'value'),
+              Output('input_ath2_2', 'value'), Output('dropdown_ath1', 'options'), Output('dropdown_angle1', 'options'),
+              Output('dropdown_COG1', 'options'), Output('dropdown_JVEL1', 'options'), Output('dropdown_ath1', 'disabled'),
+              Output('dropdown_ath2', 'options'), Output('dropdown_angle2', 'options'), Output('dropdown_COG2', 'options'),
+              Output('dropdown_JVEL2', 'options'), Output('dropdown_ath2', 'disabled'), Output('loading-output1', 'children')]
+
+loadArgsI = [Input('dropdown_load1', 'value'), Input('dropdown_load2', 'value'),
+              State('input_ath1', 'value'), State('input_ath2', 'value'),
+              State('input_ath1_2', 'value'), State('input_ath2_2', 'value')]
+
+@app.callback(loadArgsO, loadArgsI, prevent_initial_call=True)
 def loaddata(selected1, selected2, ath1value, ath2value, ath1value2, ath2value2):
     cid = dash.callback_context.triggered_id
-    global data, metadata
+    global data, metadata, frames
     if not cid:
         return '', '', '', '', [], [], [], [], True, [], [], [], [], True, dash.no_update
 
     if cid == 'dropdown_load1':
         if not selected1:
             return '', '', '', '', [], [], [], [], True, [], [], [], [], True, dash.no_update
-        _metadata, xls, frames = dropbox_download_files(selected1)
+        _metadata, xls, _frames = dropbox_download_files(selected1)
         if ath1value and ath2value:
             del metadata[ath1value]; del metadata[ath2value]
             del data[ath1value]; del data[ath2value]
     else:
         if not selected2:
             return '', '', '', '', [], [], [], [], True, [], [], [], [], True, dash.no_update
-        _metadata, xls, frames = dropbox_download_files(selected2)
+        _metadata, xls, _frames = dropbox_download_files(selected2)
         if ath1value2 and ath2value2:
             del metadata[ath1value2]; del metadata[ath2value2]
             del data[ath1value2]; del data[ath2value2]
@@ -677,6 +760,7 @@ def loaddata(selected1, selected2, ath1value, ath2value, ath1value2, ath2value2)
     ath1, ath2 = xls.sheet_names
     metadata[ath1], metadata[ath2] = unpackmeta(_metadata, 'Left'), unpackmeta(_metadata, 'Right')
     data[ath1], data[ath2] = xls.parse(ath1), xls.parse(ath2)
+    frames[ath1], frames[ath2] = _frames['Left'], _frames['Right']
     #data = {xls.sheet_names[0]: xls.parse(xls.sheet_names[0]), xls.sheet_names[1]: xls.parse(xls.sheet_names[1])}
     #metafile = open(fpath + '/metadata.pkl', 'rb')
     #metadata[0] = pickle.load(metafile)
@@ -731,10 +815,13 @@ def getHoldIndex(holdtext, ath):
             return fnr
     return None
 
-def plotData(athvalue, datavalue, trigger, ht):
+def plotData(athvalue, datavalue, slidervalue, trigger, ht, rfig):
     fig = go.Figure(data=[], layout=defl)
     if datavalue is None:
-        return fig, dash.no_update, dash.no_update, dash.no_update, dash.no_update, True, 0, 0
+        temp = [d for d in rfig.data if d.name in ['COGPath', 'holdspoints']]
+        rfig.data = temp
+        return fig, rfig, dash.no_update, dash.no_update, dash.no_update, dash.no_update, True, 0, 0,\
+               dash.no_update, dash.no_update, dash.no_update
     y = interNaNs(data[athvalue][datavalue].values)
     trace = go.Scatter(
         x=np.linspace(0, len(y) - 1, len(y)) / 24,
@@ -747,11 +834,14 @@ def plotData(athvalue, datavalue, trigger, ht):
     fig.add_trace(trace)
     fig.update_layout(yaxis=dict(range=[ylim[0], ylim[1]]))
     if trigger[:-1] == 'dropdown_angle':
-        return fig, dash.no_update, dash.no_update, '', '', False, int(len(y)) - 1, 0, {'display':'block'}, styleimgN
+        return fig, rfig, dash.no_update, '', '', '', False, int(len(y)) - 1, slidervalue,\
+               {'display':'block'}, styleimgN, dash.no_update
     elif trigger[:-1] == 'dropdown_COG':
-        return fig, dash.no_update, '', dash.no_update, '', False, int(len(y)) - 1, 0, {'display':'block'}, styleimgN
+        return fig, rfig, '', dash.no_update, '', '', False, int(len(y)) - 1, slidervalue,\
+               {'display':'block'}, styleimgN, dash.no_update
     elif trigger[:-1] == 'dropdown_JVEL':
-        return fig, dash.no_update, '', '', dash.no_update, False, int(len(y)) - 1, 0, {'display':'block'}, styleimgN
+        return fig, rfig, '', '', dash.no_update, '', False, int(len(y)) - 1, slidervalue,\
+               {'display':'block'}, styleimgN, dash.no_update
 
 def drawSkeleton(fig, index, ath, x, y):
     kpts = metadata[ath]['KeyPoints']
@@ -827,9 +917,9 @@ def dropbox_download_files(folder):
     xls = pd.ExcelFile(result.content)
     #_, response = dbx.files_download(path='/Test/'+folder+'/'+imgfile)
     dbx.files_download_to_file(download_path='output.avi', path='/Test/' + folder + '/' + imgfile)
-    frames = readFrames(metafile=metafile)
+    _frames = readFrames(metafile=metafile)
 
-    return metafile, xls, frames
+    return metafile, xls, _frames
 
 def dropbox_listfolders():
     temp = dbx.files_list_folder('/Test').entries
@@ -871,6 +961,12 @@ def unpackmeta(meta, side):
 
     return cont
 
+def concatIMG(im1, im2):
+    dst = Image.new('RGB', (im1.width + im2.width, im1.height))
+    dst.paste(im1, (0, 0))
+    dst.paste(im2, (im1.width, 0))
+    return dst
+
 def readFrames(metafile, response=None):
     FILE_OUTPUT = 'output.avi'
     if response is not None:
@@ -893,8 +989,8 @@ def readFrames(metafile, response=None):
             for key in kps.keys():
                 temp = [kps[key][k][i, :] for k in kps[key].keys()]
                 mins, maxs = np.min(temp, axis=0), np.max(temp, axis=0)
-                left, bottom = mins - 100
-                right, top = maxs + 100
+                c = (maxs + mins) // 2
+                left, right, bottom, top = c[0] - 400, c[0] + 400, c[1] - 200, c[1] + 200
                 frame = Image.fromarray(conv)
                 crop = frame.crop((left, bottom, right, top))
                 frames[key].append(crop)
